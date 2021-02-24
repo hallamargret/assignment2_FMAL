@@ -6,7 +6,7 @@
 // val it : value = I 0
 // > ieval (IVar "x") ["x", I 5];;
 // val it : value = I 5
-// > ieval (IPlus (IVar "x", ITimes (IVar "y", IVar "z"))) ["x", F 1.1; "z", I 10];
+// > ieval (IPlus (IVar "x", ITimes (IVar "y", IVar "z"))) ["x", F 1.1; "z", I 10];;
 // val it : value = F 1.1
 
 

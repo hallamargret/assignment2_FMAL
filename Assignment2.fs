@@ -1,7 +1,7 @@
 // T-501-FMAL, Spring 2021, Assignment 2
 
 (*
-STUDENT NAMES HERE: ...
+STUDENT NAMES HERE: Eva Sol Petursdottir and Halla Margret Jonsdottir
 
 
 *)
@@ -154,9 +154,16 @@ let rec reval (inss : rcode) (stk : stack) (renv : renvir) =
 
 // Problem 1
 
+let rec modifiedLookup (x : string) (env : (string * 'a) list) : 'a =
+    match env with
+    | []          -> I 0
+    | (y, v)::env -> if x = y then v else modifiedLookup x env
+
+
+
 let rec ieval (e : iexpr) (env : envir) : value =
     match e with
-    | IVar x -> lookup x env                       // to modify
+    | IVar x -> modifiedLookup x env                       // to modify
     | INumI i -> I i
     | INumF f -> F f
     | IPlus (e1, e2) -> plus_value (ieval e1 env, ieval e2 env)
@@ -178,27 +185,48 @@ let rec eval (e : expr) (env : envir) : value =
     | Plus (e1, e2) ->                             // to complete
         match eval e1 env, eval e2 env with
         | I i1, I i2 -> I (i1 + i2)
+        | F i1, F i2 -> F (i1 + i2)                 // implemented
         | _ -> failwith "wrong operand type"
     | Times (e1, e2) ->                            // to complete
         match eval e1 env, eval e2 env with
         | I i1, I i2 -> I (i1 * i2)
+        | F i1, F i2 -> F (i1 * i2)                 // implemented
         | _ -> failwith "wrong operand type"
     | Neg e ->                                     // to complete
         match eval e env with
         | I i -> I (- i)
+        | F i -> F (- i)                           // implemented
         | _ -> failwith "wrong operand type"
     | IntToFloat e ->
         match eval e env with
         | I i -> F (float i)
         | _ -> failwith "wrong operand type"
-    | IfPositive (e, et, ef) -> failwith "to implement"
-    | Match (e, xi, ei, xf, ef) -> failwith "to implement"
+    | IfPositive (e, et, ef) ->                     // implemented
+        match eval e env with 
+        | I i when i >= 0  -> eval et env
+        | I i  when i < 0 -> eval ef env
+        | F i when i >= 0.0 -> eval et env
+        | F i when i < 0.0 -> eval ef env
+        |_ -> failwith "wrong operand type"
+
+    | Match (e, xi, ei, xf, ef) -> 
+        if (eval e env = I i) then eval ei 
+        elif eval e env = F i then eval ef env
+    //match eval e env with                       // implemented
+    //| I i -> Match(e , i, eval ei env, xf, ef)
+    //| F i -> Match (e,xi ,ei , i, eval ef env)
+    //|_ -> failwith "wrong operand type"
         
 
 
 // Problem 3
 
-let to_float (v : value) : float = failwith "to implement"
+let to_float (v : value) : float = 
+    match v with
+    | I i -> (float i)
+    | F i -> i
+    | _ -> failwith "to implement"
+
 
 
 // Problem 4
