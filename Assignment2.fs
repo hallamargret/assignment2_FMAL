@@ -210,13 +210,10 @@ let rec eval (e : expr) (env : envir) : value =
         |_ -> failwith "wrong operand type"
 
     | Match (e, xi, ei, xf, ef) -> 
-        if (eval e env = I i) then eval ei 
-        elif eval e env = F i then eval ef env
-    //match eval e env with                       // implemented
-    //| I i -> Match(e , i, eval ei env, xf, ef)
-    //| F i -> Match (e,xi ,ei , i, eval ef env)
-    //|_ -> failwith "wrong operand type"
-        
+        match eval e env with
+        | I i -> eval ei (env @ [xi, I i])
+        | F i -> eval ef (env @ [xf, F i])
+        | _ -> failwith "wrong operand type"
 
 
 // Problem 3
@@ -231,22 +228,55 @@ let to_float (v : value) : float =
 
 // Problem 4
 
-let to_float_expr (e : expr) : expr = failwith "to implement"
+let to_float_expr (e : expr) : expr = 
+    Match(e, "I" , IntToFloat e, "F", e)
 
-let plus_expr (e1 : expr, e2 : expr) : expr = failwith "to implement"
+let plus_expr (e1 : expr, e2 : expr) : expr =
+    Match(e1, "I" , Match(e2, "I", Plus(e1, e2), "F", Plus(IntToFloat e1, e2)), "F", Match(e2, "I", Plus(e1, IntToFloat e2), "F", Plus(e1, e2)))
 
-let times_expr (e1 : expr, e2 : expr) : expr = failwith "to implement"
+let times_expr (e1 : expr, e2 : expr) : expr =
+    Match(e1, "I" , Match(e2, "I", Times(e1, e2), "F", Times(IntToFloat e1, e2)), "F", Match(e2, "I", Times(e1, IntToFloat e2), "F", Times(e1, e2)))
+
+
+
 
 
 // Problem 5
 
 let rec add_matches (e : iexpr) : expr = failwith "to implement"
+    //add_matches
+
 
 
 // Problem 6
 
 let rec infer (e : expr) (tyenv : tyenvir) : typ =
-    failwith "to implement"
+    match e with
+    | Var x -> lookup x tyenv
+    | NumI _ -> Int
+    | NumF _ -> Float
+    | Plus(e1, e2) ->
+        match infer e1 tyenv, infer e2 tyenv with
+        | Int _, Int _ -> Int
+        | Float _, Float _ -> Float
+        | _ -> failwith "wrong operand type"
+    | Times(e1, e2) ->
+        match infer e1 tyenv, infer e2 tyenv with
+        | Int _, Int _ -> Int
+        | Float _, Float _ -> Float
+        | _ -> failwith "wrong operand type"
+    | IfPositive (e, et, ef) ->                     // implemented
+        match infer e tyenv with 
+        | Int _ when Int i >= 0  -> infer et tyenv
+        | Int _  when i < 0 -> infer ef tyenv
+        | Float _ when i >= 0.0 -> infer et tyenv
+        | Float _ when i < 0.0 -> infer ef tyenv
+        |_ -> failwith "wrong operand type"
+    | IntToFloat e ->
+        match infer e tyenv with
+        | Int _ -> Float
+        | _ -> failwith "wrong operand type"
+
 
 
 // Problem 7
