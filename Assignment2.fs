@@ -162,7 +162,7 @@ let rec modifiedLookup (x : string) (env : (string * 'a) list) : 'a =
 
 let rec ieval (e : iexpr) (env : envir) : value =
     match e with
-    | IVar x -> modifiedLookup x env                       // to modify
+    | IVar x -> modifiedLookup x env                       // to modify - Modified and implemented above
     | INumI i -> I i
     | INumF f -> F f
     | IPlus (e1, e2) -> plus_value (ieval e1 env, ieval e2 env)
@@ -181,21 +181,20 @@ let rec eval (e : expr) (env : envir) : value =
     | Var x -> lookup x env
     | NumI i -> I i
     | NumF f -> F f
-    | Plus (e1, e2) ->                             // to complete
+    | Plus (e1, e2) ->                             // to complete - Completed
         match eval e1 env, eval e2 env with
         | I i1, I i2 -> I (i1 + i2)
         | F i1, F i2 -> F (i1 + i2)                 // implemented
         | _ -> failwith "wrong operand type"
-    | Times (e1, e2) ->                            // to complete
+    | Times (e1, e2) ->                            // to complete - Completed
         match eval e1 env, eval e2 env with
         | I i1, I i2 -> I (i1 * i2)
         | F i1, F i2 -> F (i1 * i2)                 // implemented
         | _ -> failwith "wrong operand type"
-    | Neg e ->                                     // to complete
+    | Neg e ->                                     // to complete - Completed
         match eval e env with
         | I i -> I (- i)
         | F i -> F (- i)                           // implemented
-        | _ -> failwith "wrong operand type"
     | IntToFloat e ->
         match eval e env with
         | I i -> F (float i)
@@ -207,11 +206,10 @@ let rec eval (e : expr) (env : envir) : value =
         | F i when i >= 0.0 -> eval et env
         | F i when i < 0.0 -> eval ef env
         |_ -> failwith "wrong operand type"
-    | Match (e, xi, ei, xf, ef) -> 
+    | Match (e, xi, ei, xf, ef) ->                  // implemented
         match eval e env with
         | I i -> eval ei (env @ [xi, I i])
         | F i -> eval ef (env @ [xf, F i])
-        | _ -> failwith "wrong operand type"
 
 
 // Problem 3
@@ -220,8 +218,6 @@ let to_float (v : value) : float =
     match v with
     | I i -> (float i)
     | F i -> i
-    | _ -> failwith "to implement"
-
 
 
 // Problem 4
@@ -249,7 +245,6 @@ let rec add_matches (e : iexpr) : expr =
     | IIfPositive (e, et, ef) -> IfPositive (add_matches e, add_matches et, add_matches ef)
 
 
-
 // Problem 6
 
 let rec infer (e : expr) (tyenv : tyenvir) : typ =
@@ -267,7 +262,7 @@ let rec infer (e : expr) (tyenv : tyenvir) : typ =
         | Int, Int -> Int
         | Float, Float -> Float
         | _ -> failwith "wrong operand type"
-    | IfPositive (e, et, ef) ->                     // implemented
+    | IfPositive (e, et, ef) ->
         match infer e tyenv with 
         | _ -> 
             match infer et tyenv, infer ef tyenv with
