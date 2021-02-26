@@ -3,7 +3,6 @@
 (*
 STUDENT NAMES HERE: Eva Sol Petursdottir and Halla Margret Jonsdottir
 
-
 *)
 
 module Assignment2
@@ -208,7 +207,6 @@ let rec eval (e : expr) (env : envir) : value =
         | F i when i >= 0.0 -> eval et env
         | F i when i < 0.0 -> eval ef env
         |_ -> failwith "wrong operand type"
-
     | Match (e, xi, ei, xf, ef) -> 
         match eval e env with
         | I i -> eval ei (env @ [xi, I i])
@@ -236,9 +234,6 @@ let plus_expr (e1 : expr, e2 : expr) : expr =
 
 let times_expr (e1 : expr, e2 : expr) : expr =
     Match(e1, "I" , Match(e2, "I", Times(e1, e2), "F", Times(IntToFloat e1, e2)), "F", Match(e2, "I", Times(e1, IntToFloat e2), "F", Times(e1, e2)))
-
-
-
 
 
 // Problem 5
@@ -356,7 +351,27 @@ let rec add_casts (e : iexpr) (tyenv : tyenvir) : expr =
 // Problem 8
 
 // ANSWER 8 HERE:
+(*
+    1. Can eval (add_matches e) [] and eval (add_casts e []) [] have different behaviour?
+    Yes, when sending ITimes or IPlus into add_casts and add_matches they behave differently because add_matches uses Match through plus_expr and times_expr
+    so eval will go into its Match. The add_casts function uses a lot af match with in the function to be sure that all cases are covered and therefor the eval 
+    does not use its Match. It should though give us the same result. (Assuming that the value in env is of the type in typenv)
 
+    > eval (add_casts (IIfPositive (INeg (IVar "x"), IPlus (IVar "y", INumI 5), ITimes (IVar "y", INumI 5))) ["x", Float; "y", Int]) ["x", F 2.2; "y", I 4];;
+    val it : value = I 20
+
+    > eval (add_matches (IIfPositive (INeg (IVar "x"), IPlus (IVar "y", INumI 5), ITimes (IVar "y", INumI 5)))) ["x", F 2.2; "y", I 4];;                     
+    val it : value = I 20
+
+    2. What about infer (add_matches e) [] and infer (add_casts e []) []?
+    It is the same, for add_matches infer uses Match but not for add_casts. It does, like for the eval, return the same result.
+
+    > infer (add_casts (IIfPositive (INeg (IVar "x"), IPlus (IVar "y", INumI 5), ITimes (IVar "y", INumI 5))) ["x", Float; "y", Int]) ["x", Int; "y", Int];; 
+    val it : typ = Int
+
+    > infer (add_matches (IIfPositive (INeg (IVar "x"), IPlus (IVar "y", INumI 5), ITimes (IVar "y", INumI 5)))) ["x", Int; "y", Int];;                     
+    val it : typ = Int
+*)
 
 // Problem 9
 
