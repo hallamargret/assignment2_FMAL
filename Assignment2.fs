@@ -243,8 +243,15 @@ let times_expr (e1 : expr, e2 : expr) : expr =
 
 // Problem 5
 
-let rec add_matches (e : iexpr) : expr = failwith "to implement"
-    //add_matches
+let rec add_matches (e : iexpr) : expr =
+    match e with
+    | IVar x -> Var x
+    | INumI x -> NumI x
+    | INumF x -> NumF x
+    | IPlus (e1, e2) -> plus_expr (add_matches e1, add_matches e2)
+    | ITimes (e1, e2) -> times_expr (add_matches e1, add_matches e2)
+    | INeg e -> Neg (add_matches e)
+    | IIfPositive (e, et, ef) -> IfPositive (add_matches e, add_matches et, add_matches ef)
 
 
 
@@ -257,32 +264,93 @@ let rec infer (e : expr) (tyenv : tyenvir) : typ =
     | NumF _ -> Float
     | Plus(e1, e2) ->
         match infer e1 tyenv, infer e2 tyenv with
-        | Int _, Int _ -> Int
-        | Float _, Float _ -> Float
+        | Int, Int -> Int
+        | Float, Float -> Float
         | _ -> failwith "wrong operand type"
     | Times(e1, e2) ->
         match infer e1 tyenv, infer e2 tyenv with
-        | Int _, Int _ -> Int
-        | Float _, Float _ -> Float
+        | Int, Int -> Int
+        | Float, Float -> Float
         | _ -> failwith "wrong operand type"
     | IfPositive (e, et, ef) ->                     // implemented
         match infer e tyenv with 
-        | Int _ when Int i >= 0  -> infer et tyenv
-        | Int _  when i < 0 -> infer ef tyenv
-        | Float _ when i >= 0.0 -> infer et tyenv
-        | Float _ when i < 0.0 -> infer ef tyenv
-        |_ -> failwith "wrong operand type"
+        | _ -> 
+            match infer et tyenv, infer ef tyenv with
+            | Int, Int -> Int
+            | Float, Float -> Float
+            | _ -> failwith "branches of different types"
     | IntToFloat e ->
         match infer e tyenv with
-        | Int _ -> Float
+        | Int -> Float
         | _ -> failwith "wrong operand type"
+    | Neg e ->
+        match infer e tyenv with
+        | Int -> Float
+        | Float -> Int
+    | Match (e, xi, ei, xf, ef) ->
+        match infer e tyenv with
+        | Int -> infer ei (tyenv @ [xi, Int])
+        | Float -> infer ef (tyenv @ [xf, Float])
 
 
 
 // Problem 7
 
-let add_casts (e : iexpr) (tyenv : tyenvir) : expr =
-    failwith "to implement"
+let rec add_casts (e : iexpr) (tyenv : tyenvir) : expr =
+    match e with
+    | IVar x -> 
+        match lookup x tyenv with
+        | _ -> Var x
+    | INumI x -> NumI x
+    | INumF x -> NumF x
+    | IPlus (e1, e2) -> 
+        match add_casts e1 tyenv , add_casts e2 tyenv with
+        | NumI x, NumF y -> Plus (IntToFloat(NumI x), NumF y)
+        | NumF x, NumI y -> Plus (NumF x, IntToFloat(NumI y))
+        | NumI x, NumI y -> Plus (NumI x, NumI x)
+        | NumF x, NumF y -> Plus (NumF x, NumF x)
+        | Var x, Var y -> Plus (Var x, Var y)
+        | Var x, NumI y ->
+            match lookup x tyenv with
+            | Int -> Plus(Var x, NumI y)
+            | Float -> Plus(Var x, IntToFloat(NumI y))
+        | NumI x, Var y ->
+            match lookup y tyenv with
+            | Int -> Plus(NumI x, Var y)
+            | Float -> Plus(IntToFloat(NumI x), Var y)
+        | Var x, NumF y ->
+            match lookup x tyenv with
+            | Int -> Plus(IntToFloat(Var x), NumF y)
+            | Float -> Plus(Var x, NumF y)
+        | NumF x, Var y ->
+            match lookup y tyenv with
+            | Int -> Plus(NumF x, IntToFloat(Var y))
+            | Float -> Plus(NumF x, Var y)
+    | ITimes (e1, e2) -> 
+        match add_casts e1 tyenv , add_casts e2 tyenv with
+        | NumI x, NumF y -> Times (IntToFloat(NumI x), NumF y)
+        | NumF x, NumI y -> Times (NumF x, IntToFloat(NumI y))
+        | NumI x, NumI y -> Times (NumI x, NumI x)
+        | NumF x, NumF y -> Times (NumF x, NumF x)
+        | Var x, Var y -> Times (Var x, Var y)
+        | Var x, NumI y ->
+            match lookup x tyenv with
+            | Int -> Times(Var x, NumI y)
+            | Float -> Times(Var x, IntToFloat(NumI y))
+        | NumI x, Var y ->
+            match lookup y tyenv with
+            | Int -> Times(NumI x, Var y)
+            | Float -> Times(IntToFloat(NumI x), Var y)
+        | Var x, NumF y ->
+            match lookup x tyenv with
+            | Int -> Times(IntToFloat(Var x), NumF y)
+            | Float -> Times(Var x, NumF y)
+        | NumF x, Var y ->
+            match lookup y tyenv with
+            | Int -> Times(NumF x, IntToFloat(Var y))
+            | Float -> Times(NumF x, Var y)
+    | INeg e -> Neg (add_casts e tyenv)
+    | IIfPositive (e, et, ef) -> IfPositive (add_casts e tyenv, add_casts et tyenv, add_casts ef tyenv)
 
 
 // Problem 8
@@ -292,4 +360,10 @@ let add_casts (e : iexpr) (tyenv : tyenvir) : expr =
 
 // Problem 9
 
-let rlower (inss : rcode) : rcode = failwith "to implement"
+let rec rlower (inss : rcode) : rcode = 
+    match inss with
+    | [] -> []
+    | RPop::inss -> RStore::RErase::rlower inss
+    | RDup::inss -> RStore::RLoad 0::RLoad 0::RErase::rlower inss
+    | RSwap::inss -> RStore::RStore::RLoad 1::RLoad 0::RErase::RErase::rlower inss
+    | x::inss -> x::rlower inss
